@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Pipeline · Personal CRM{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Pipeline</h1>
+    <div class="page-subtitle">Drag deals between stages to update them</div>
+  </div>
+  <a href="{{ url_for('new_deal') }}" class="btn btn-primary">+ New Deal</a>
+</div>
+
+<div class="board">
+  {% for stage in stages %}
+  <div class="board-column" data-stage="{{ stage }}">
+    <div class="board-column-header">
+      <div>
+        <div class="board-column-title">
+          <span class="stage-dot" style="background:{{ stage_colors[stage] }}"></span>{{ stage }}
+        </div>
+        <div class="board-column-total">₹{{ "{:,.0f}".format(totals[stage]) }}</div>
+      </div>
+      <span class="board-column-count">{{ board[stage]|length }}</span>
+    </div>
+    <div class="board-cards" data-stage="{{ stage }}">
+      {% for d in board[stage] %}
+      <div class="deal-card" draggable="true" data-deal-id="{{ d.id }}" onclick="if(!window.__dragging) window.location='{{ url_for('edit_deal', deal_id=d.id) }}'">
+        <div class="deal-title">{{ d.title }}</div>
+        <div class="deal-contact">{{ d.contact.name }}{% if d.contact.company %} · {{ d.contact.company }}{% endif %}</div>
+        <div class="deal-meta">
+          <span class="deal-value">₹{{ "{:,.0f}".format(d.value) }}</span>
+          <span class="deal-date">{{ d.expected_close.strftime('%d %b') if d.expected_close else '' }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+let dragged = null;
+
+document.querySelectorAll('.deal-card').forEach(card => {
+  card.addEventListener('dragstart', (e) => {
+    dragged = card;
+    window.__dragging = true;
+    card.classList.add('dragging');
+  });
+  card.addEventListener('dragend', () => {
+    card.classList.remove('dragging');
+    setTimeout(() => { window.__dragging = false; }, 50);
+  });
+});
+
+document.querySelectorAll('.board-cards').forEach(col => {
+  col.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    col.closest('.board-column').classList.add('drag-over');
+  });
+  col.addEventListener('dragleave', () => {
+    col.closest('.board-column').classList.remove('drag-over');
+  });
+  col.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    col.closest('.board-column').classList.remove('drag-over');
+    if (!dragged) return;
+
+    const dealId = dragged.dataset.dealId;
+    const newStage = col.dataset.stage;
+    const oldStage = dragged.closest('.board-cards').dataset.stage;
+
+    if (newStage === oldStage) return;
+
+    col.appendChild(dragged);
+
+    try {
+      const res = await fetch(`/deals/${dealId}/move`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage: newStage })
+      });
+      if (!res.ok) throw new Error('Failed');
+      window.location.reload();
+    } catch (err) {
+      alert('Could not move deal. Reloading...');
+      window.location.reload();
+    }
+  });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Personal CRM{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Dashboard</h1>
+    <div class="page-subtitle">Overview of your contacts, pipeline, and upcoming follow-ups</div>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total Contacts</div>
+    <div class="stat-value">{{ total_contacts }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Open Deals</div>
+    <div class="stat-value">{{ open_deals }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Open Pipeline Value</div>
+    <div class="stat-value accent">₹{{ "{:,.0f}".format(total_pipeline) }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Won Value</div>
+    <div class="stat-value gold">₹{{ "{:,.0f}".format(won_value) }}</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <div class="panel-title">Pipeline by Stage</div>
+    {% set max_value = stage_summary | map(attribute='value') | max %}
+    {% for s in stage_summary %}
+    <div class="stage-row">
+      <span class="stage-dot" style="background:{{ s.color }}"></span>
+      <span class="stage-name">{{ s.name }}</span>
+      <div class="stage-bar-track">
+        <div class="stage-bar-fill" style="background:{{ s.color }}; width: {{ (s.value / max_value * 100) if max_value > 0 else 0 }}%"></div>
+      </div>
+      <span class="stage-count">{{ s.count }}</span>
+      <span class="stage-value">₹{{ "{:,.0f}".format(s.value) }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">
+      Upcoming Follow-ups
+      {% if overdue_count > 0 %}<span class="badge" style="background: rgba(248,113,113,0.12); color: var(--danger)">{{ overdue_count }} overdue</span>{% endif %}
+    </div>
+    {% if upcoming %}
+      {% for a in upcoming %}
+      <div class="activity-item">
+        <div class="activity-icon">
+          {% if a.type == 'call' %}☎{% elif a.type == 'email' %}✉{% elif a.type == 'meeting' %}◷{% else %}✎{% endif %}
+        </div>
+        <div class="activity-body">
+          <div class="activity-type">{{ a.type }} · <a href="{{ url_for('contact_detail', contact_id=a.contact_id) }}" class="cell-link">{{ a.contact.name }}</a></div>
+          <div class="activity-text">{{ a.body }}</div>
+          <div class="activity-due {% if a.due_date < today %}overdue{% endif %}">
+            Due {{ a.due_date.strftime('%d %b %Y') }}{% if a.due_date < today %} · overdue{% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state" style="padding: 30px 10px;">
+        <div class="title">No upcoming follow-ups</div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-title">Recently Added Deals</div>
+  {% if recent_deals %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Deal</th><th>Contact</th><th>Stage</th><th>Value</th><th>Expected Close</th></tr>
+      </thead>
+      <tbody>
+        {% for d in recent_deals %}
+        <tr>
+          <td><a href="{{ url_for('edit_deal', deal_id=d.id) }}" class="cell-link">{{ d.title }}</a></td>
+          <td><a href="{{ url_for('contact_detail', contact_id=d.contact.id) }}" class="cell-link">{{ d.contact.name }}</a></td>
+          <td><span class="stage-pill" style="background: {{ stage_colors[d.stage] }}22; color: {{ stage_colors[d.stage] }}"><span class="stage-dot" style="background: {{ stage_colors[d.stage] }}"></span>{{ d.stage }}</span></td>
+          <td>₹{{ "{:,.0f}".format(d.value) }}</td>
+          <td>{{ d.expected_close.strftime('%d %b %Y') if d.expected_close else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="icon">◆</div>
+    <div class="title">No deals yet</div>
+    <a href="{{ url_for('new_deal') }}" class="btn btn-primary btn-sm" style="margin-top: 12px;">+ New Deal</a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

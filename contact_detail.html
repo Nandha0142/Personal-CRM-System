@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}{{ contact.name }} · Personal CRM{% endblock %}
+{% block content %}
+
+<div class="contact-header">
+  <div class="contact-id-row">
+    <div class="avatar-lg">{{ contact.name[0]|upper }}</div>
+    <div>
+      <div class="contact-name">{{ contact.name }}</div>
+      <div class="contact-company">{{ contact.company or 'No company' }}</div>
+      <div style="margin-top: 8px;">
+        {% for t in contact.tag_list %}<span class="tag">{{ t }}</span>{% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="actions-row">
+    <a href="{{ url_for('new_deal', contact_id=contact.id) }}" class="btn btn-primary btn-sm">+ New Deal</a>
+    <a href="{{ url_for('edit_contact', contact_id=contact.id) }}" class="btn btn-ghost btn-sm">Edit</a>
+    <form method="post" action="{{ url_for('delete_contact', contact_id=contact.id) }}" class="inline-form"
+          onsubmit="return confirm('Delete {{ contact.name }} and all related deals/activities?');">
+      <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+    </form>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div>
+    <div class="panel">
+      <div class="panel-title">Contact Info</div>
+      <div style="display:flex; flex-direction:column; gap:10px; font-size:13.5px;">
+        <div><span class="cell-sub">Email</span><br>{{ contact.email or '—' }}</div>
+        <div><span class="cell-sub">Phone</span><br>{{ contact.phone or '—' }}</div>
+        <div><span class="cell-sub">Added</span><br>{{ contact.created_at.strftime('%d %b %Y') }}</div>
+      </div>
+      {% if contact.notes %}
+        <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border-soft);">
+          <span class="cell-sub">Notes</span>
+          <div style="margin-top:6px; white-space: pre-wrap;">{{ contact.notes }}</div>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Deals ({{ contact.deals|length }})</div>
+      {% if contact.deals %}
+        {% for d in contact.deals %}
+        <div class="deal-card" style="cursor:pointer; margin-bottom:10px;" onclick="window.location='{{ url_for('edit_deal', deal_id=d.id) }}'">
+          <div class="deal-title">{{ d.title }}</div>
+          <div class="deal-meta">
+            <span class="stage-pill" style="background:{{ stage_colors[d.stage] }}22; color:{{ stage_colors[d.stage] }}">
+              <span class="stage-dot" style="background:{{ stage_colors[d.stage] }}"></span>{{ d.stage }}
+            </span>
+            <span class="deal-value">₹{{ "{:,.0f}".format(d.value) }}</span>
+          </div>
+          {% if d.expected_close %}
+          <div class="deal-date" style="margin-top:6px;">Expected close: {{ d.expected_close.strftime('%d %b %Y') }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state" style="padding:30px 10px;">
+          <div class="title">No deals yet</div>
+          <a href="{{ url_for('new_deal', contact_id=contact.id) }}" class="btn btn-primary btn-sm" style="margin-top:10px;">+ New Deal</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel-title">Add Activity / Follow-up</div>
+      <form method="post" action="{{ url_for('new_activity', contact_id=contact.id) }}">
+        <div class="form-grid">
+          <div class="field">
+            <label>Type</label>
+            <select name="type">
+              <option value="note">Note</option>
+              <option value="call">Call</option>
+              <option value="email">Email</option>
+              <option value="meeting">Meeting</option>
+              <option value="follow-up">Follow-up</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Due Date (optional)</label>
+            <input type="date" name="due_date">
+          </div>
+          <div class="field full">
+            <label>Details</label>
+            <textarea name="body" placeholder="What happened or what's planned..." required></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Add Activity</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Activity Timeline</div>
+      {% if contact.activities %}
+        {% for a in contact.activities %}
+        <div class="activity-item">
+          <div class="activity-icon">
+            {% if a.type == 'call' %}☎{% elif a.type == 'email' %}✉{% elif a.type == 'meeting' %}◷{% elif a.type == 'follow-up' %}↻{% else %}✎{% endif %}
+          </div>
+          <div class="activity-body">
+            <div class="activity-type">{{ a.type }} · {{ a.created_at.strftime('%d %b %Y') }}</div>
+            <div class="activity-text {% if a.done %}activity-done{% endif %}">{{ a.body }}</div>
+            {% if a.due_date %}
+              <div class="activity-due {% if a.due_date < today and not a.done %}overdue{% endif %}">
+                Due {{ a.due_date.strftime('%d %b %Y') }}{% if a.due_date < today and not a.done %} · overdue{% endif %}
+              </div>
+            {% endif %}
+            <div class="actions-row" style="margin-top:8px;">
+              {% if a.due_date %}
+              <form method="post" action="{{ url_for('toggle_activity', activity_id=a.id) }}">
+                <button type="submit" class="btn btn-ghost btn-sm">{{ 'Mark Pending' if a.done else 'Mark Done' }}</button>
+              </form>
+              {% endif %}
+              <form method="post" action="{{ url_for('delete_activity', activity_id=a.id) }}" onsubmit="return confirm('Delete this activity?');">
+                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state" style="padding:30px 10px;">
+          <div class="title">No activity logged yet</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

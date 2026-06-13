@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Contacts · Personal CRM{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Contacts</h1>
+    <div class="page-subtitle">{{ contacts|length }} total</div>
+  </div>
+  <a href="{{ url_for('new_contact') }}" class="btn btn-primary">+ New Contact</a>
+</div>
+
+<form method="get" class="search-box">
+  <span class="search-icon">⌕</span>
+  <input type="text" name="q" value="{{ q }}" placeholder="Search by name, company, email or tag...">
+</form>
+
+{% if contacts %}
+<div class="panel" style="padding: 0;">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Company</th>
+          <th>Email / Phone</th>
+          <th>Tags</th>
+          <th>Open Deal Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in contacts %}
+        <tr onclick="window.location='{{ url_for('contact_detail', contact_id=c.id) }}'" style="cursor:pointer;">
+          <td><span class="cell-link">{{ c.name }}</span></td>
+          <td>{{ c.company or '—' }}</td>
+          <td>
+            {{ c.email or '—' }}
+            {% if c.phone %}<div class="cell-sub">{{ c.phone }}</div>{% endif %}
+          </td>
+          <td>
+            {% for t in c.tag_list %}<span class="tag">{{ t }}</span>{% endfor %}
+          </td>
+          <td>
+            {% if c.open_deal_value > 0 %}
+              <span style="color: var(--accent); font-weight: 600;">₹{{ "{:,.0f}".format(c.open_deal_value) }}</span>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="icon">◈</div>
+  <div class="title">No contacts {{ 'match your search' if q else 'yet' }}</div>
+  <a href="{{ url_for('new_contact') }}" class="btn btn-primary btn-sm" style="margin-top: 12px;">+ Add your first contact</a>
+</div>
+{% endif %}
+
+{% endblock %}

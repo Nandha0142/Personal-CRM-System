@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Personal CRM{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">CR</div>
+      <div class="brand-text">
+        <span class="brand-title">Pipeline</span>
+        <span class="brand-sub">Personal CRM</span>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}">
+        <span class="nav-icon">◇</span> Dashboard
+      </a>
+      <a href="{{ url_for('contacts') }}" class="nav-link {% if request.endpoint in ['contacts','contact_detail','new_contact','edit_contact'] %}active{% endif %}">
+        <span class="nav-icon">◈</span> Contacts
+      </a>
+      <a href="{{ url_for('deals') }}" class="nav-link {% if request.endpoint in ['deals','new_deal','edit_deal'] %}active{% endif %}">
+        <span class="nav-icon">◆</span> Pipeline
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="{{ url_for('new_contact') }}" class="btn btn-primary btn-block">+ New Contact</a>
+      <a href="{{ url_for('new_deal') }}" class="btn btn-ghost btn-block">+ New Deal</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>
