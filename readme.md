@@ -1,5 +1,8 @@
 # Personal CRM — Sales Pipeline
 
+##Intern ID: CITS4146
+##Organization: Codtech IT Solutions Private Limited
+
 A Flask-based CRM to manage contacts and a visual sales pipeline (deals/stages), with notes and follow-up reminders. Dark-mode UI with a navy + electric-cyan theme.
 
 ## Features
