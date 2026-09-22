@@ -1,3 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Contacts · Personal CRM{% endblock %}
+{% block content %}
+
 <div class="page-header">
   <div>
     <h1 class="page-title">Contacts</h1>
@@ -53,4 +57,6 @@
   <div class="title">No contacts {{ 'match your search' if q else 'yet' }}</div>
   <a href="{{ url_for('new_contact') }}" class="btn btn-primary btn-sm" style="margin-top: 12px;">+ Add your first contact</a>
 </div>
+{% endif %}
 
+{% endblock %}
